@@ -13,27 +13,29 @@ Vagrant.configure(2) do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
 
-  # Docker EE node for CentOS 7.3
-    config.vm.define "centos-node" do |centos_node|
-      centos_node.vm.box = "centos/7"
+    config.vm.define "consul-node" do |centos_node|
+      centos_node.vm.box = "centos/stream8"
       centos_node.vm.network "private_network", type: "dhcp"
       centos_node.vm.hostname = "centos-node"
       config.vm.provider :virtualbox do |vb|
          vb.customize ["modifyvm", :id, "--memory", "3072"]
          vb.customize ["modifyvm", :id, "--cpus", "2"]
-         vb.name = "centos-node"
+         vb.name = "consul-node"
       end
       centos_node.vm.provision "shell", inline: <<-SHELL
-       sudo yum -y remove docker
-       sudo yum -y remove docker-selinux
-       sudo rpm --import "https://sks-keyservers.net/pks/lookup?op=get&search=0xee6d536cf7dc86e2d7d56f59a178ac6c6238f52e"
-       sudo yum install -y yum-utils
-       sudo yum-config-manager --add-repo https://packages.docker.com/1.13/yum/repo/main/centos/7
-       sudo yum makecache fast
-       sudo yum -y install docker-engine
-       sudo systemctl start docker
-       sudo usermod -aG docker vagrant
+        sudo yum install -y yum-utils
+        sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+        sudo yum -y install consul
+        sudo usermod -aG consul vagrant
+        sudo yum install -y wget unzip glibc
+        sudo wget https://github.com/tetratelabs/archive-envoy/releases/download/v1.22.2/envoy-v1.22.2-linux-amd64.tar.xz -O envoy.tar.xz
+        tar xvf envoy.tar.xz
+        rm envoy.tar.xz
+        sudo cp envoy-v1.22.2-linux-amd64/bin/envoy /usr/local/bin
+        wget https://github.com/hashicorp/demo-consul-101/releases/download/0.0.3.1/counting-service_linux_amd64.zip
+        unzip counting-service_linux_amd64.zip
+        wget https://github.com/hashicorp/demo-consul-101/releases/download/0.0.3.1/dashboard-service_linux_amd64.zip
+        unzip dashboard-service_linux_amd64.zip
      SHELL
     end
-
 end
